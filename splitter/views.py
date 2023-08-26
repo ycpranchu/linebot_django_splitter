@@ -34,7 +34,7 @@ def callback(request):
                 uid = event.source.user_id
                 textArray = text.split(' ')
                 
-                if len(textArray) <= 0 or textArray[0:2] != "ss":
+                if len(textArray) <= 0 or textArray[0][0:2] != "ss":
                     return HttpResponse("do nothing")
 
                 message = []
@@ -65,14 +65,14 @@ def callback(request):
 
                 elif len(textArray) >= 4 and textArray[0] in ("ssupdate", "ssu"): # 修改
                     nameString, costString = makeList(textArray, 2)
-                    Main_Database.objects.filter(data_id=int(textArray[2])).update(name_field=nameString, cost_field=costString)
+                    Main_Database.objects.filter(data_id=int(textArray[1])).update(name_field=nameString, cost_field=costString)
                     
                     dataArray = Main_Database.objects.filter(name_field=nameString, cost_field=costString)
                     message.append(TextSendMessage(text='分帳資料修改完成'))
 
                 elif len(textArray) >= 2 and textArray[0] in ("ssdelete", "ssd"): # 刪除
-                    Main_Database.objects.filter(data_id=int(textArray[2])).delete()
-                    message.append(TextSendMessage(text='第' + textArray[2] + '筆資料已刪除'))
+                    Main_Database.objects.filter(data_id=int(textArray[1])).delete()
+                    message.append(TextSendMessage(text='第' + textArray[1] + '筆資料已刪除'))
 
                 # elif textArray[0] in ("sstotal", " sst"):
                 #     dataArray = Main_Database.objects.all()

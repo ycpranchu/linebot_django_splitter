@@ -9,7 +9,18 @@ class Main_Database(models.Model):
 
     def __str__(self):
         return self.data_id + " " + self.name_field + " " + self.cost_field + " " + self.time_field
-    
+
+
+# class refer_id(models.Model):
+    # data_id = models.AutoField(primary_key=True)
+    # address = models.ForeignKey("Address", on_delete=models.CASCADE)
+
+#     person = models.ForeignKey(Main_Database)
+#     data_id = models.AutoField(primary_key=True)
+#     name = models.CharField(max_length=50)
+#     birthday = models.DateField()
+
+
 
 def makeList(textArray, startIndex):
     nameString, costString = "", ""
