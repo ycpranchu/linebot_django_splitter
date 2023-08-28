@@ -48,12 +48,15 @@ def callback(request):
 
                 elif len(textArray) >= 3 and textArray[0] in ("sscreate", "ssc"): # 新增
                     nameString, costString = makeList(textArray, 1)
-                    Main_Database.objects.create(name_field=nameString, cost_field=costString)
+                    d = Main_Database.objects.create(name_field=nameString, cost_field=costString)
+                    
+                    dataArray = Order_Data.objects.all()
+                    Order_Data.objects.create(order_id=len(dataArray)+1, Main_Database=d)
+
                     message.append(TextSendMessage(text='分帳資料新增完成'))
                     
                 elif len(textArray) >= 1 and textArray[0] in ("sslist", "ssl"): # 列出
-                    dataArray = Main_Database.objects.all()
-                    # Main_Database.objects.filter()
+                    dataArray = Order_Data.objects.all()
                     
                     textMessage = ""
                     for item in dataArray:
@@ -65,13 +68,20 @@ def callback(request):
 
                 elif len(textArray) >= 4 and textArray[0] in ("ssupdate", "ssu"): # 修改
                     nameString, costString = makeList(textArray, 2)
-                    Main_Database.objects.filter(data_id=int(textArray[1])).update(name_field=nameString, cost_field=costString)
-                    
-                    dataArray = Main_Database.objects.filter(name_field=nameString, cost_field=costString)
+                    data = Order_Data.objects.get(order_id=int(textArray[1]))
+                    Main_Database.objects.filter(data_id=data.Main_Database.data_id).update(name_field=nameString, cost_field=costString)
                     message.append(TextSendMessage(text='分帳資料修改完成'))
 
                 elif len(textArray) >= 2 and textArray[0] in ("ssdelete", "ssd"): # 刪除
-                    Main_Database.objects.filter(data_id=int(textArray[1])).delete()
+                    data = Order_Data.objects.get(order_id=int(textArray[1]))
+                    Main_Database.objects.filter(data_id=data.Main_Database.data_id).delete()
+                    
+                    dataArray = Order_Data.objects.all()
+                    for item in dataArray:
+                        if item.order_id > int(textArray[1]):
+                            item.order_id -= 1
+                            item.save()
+
                     message.append(TextSendMessage(text='第' + textArray[1] + '筆資料已刪除'))
 
                 # elif textArray[0] in ("sstotal", " sst"):

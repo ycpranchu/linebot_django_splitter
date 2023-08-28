@@ -7,19 +7,10 @@ class Main_Database(models.Model):
     cost_field = models.CharField(max_length=200, blank=True, null=False)
     time_field = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.data_id + " " + self.name_field + " " + self.cost_field + " " + self.time_field
 
-
-# class refer_id(models.Model):
-    # data_id = models.AutoField(primary_key=True)
-    # address = models.ForeignKey("Address", on_delete=models.CASCADE)
-
-#     person = models.ForeignKey(Main_Database)
-#     data_id = models.AutoField(primary_key=True)
-#     name = models.CharField(max_length=50)
-#     birthday = models.DateField()
-
+class Order_Data(models.Model):
+    order_id = models.IntegerField(blank=True, null=False)
+    Main_Database = models.ForeignKey(Main_Database, on_delete=models.CASCADE)
 
 
 def makeList(textArray, startIndex):
@@ -39,9 +30,9 @@ def makeList(textArray, startIndex):
 
 
 def splitList(item):
-    nameArr = item.name_field.split('/')
-    costArr = item.cost_field.split('/')
-    textMessage = str(item.data_id) + ". " + nameArr[0] + costArr[0]
+    nameArr = item.Main_Database.name_field.split('/')
+    costArr = item.Main_Database.cost_field.split('/')
+    textMessage = str(item.order_id) + ".\t" + nameArr[0] + costArr[0]
     for i in range(1, len(nameArr)):
         textMessage += " " + nameArr[i] + costArr[i]
     return textMessage
