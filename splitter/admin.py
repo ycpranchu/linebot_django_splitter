@@ -4,7 +4,7 @@ from django.contrib import admin
 from splitter.models import *
 
 class Main_Database_admin(admin.ModelAdmin):
-    list_display = ('data_id', 'name_field', 'cost_field', 'time_field')
+    list_display = ('data_id', 'item_field', 'name_field', 'cost_field', 'time_field')
 
 class Order_Data_admin(admin.ModelAdmin):
     list_display = ('order_id', 'Main_Database')

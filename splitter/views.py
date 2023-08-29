@@ -39,25 +39,32 @@ def callback(request):
 
                 message = []
                 if len(textArray) >= 1 and textArray[0] in ("ss"): # 所有指令
-                    message.append(TextSendMessage(text='新增: sscreate/ssc {name1} {cost1} {name2} {cost2}...\n \
+                    message.append(TextSendMessage(text='新增: sscreate/ssc {item} {name1} {cost1} {name2} {cost2}...\n \
                                                     列出: sslist/ssl\n \
-	                                                修改: ssupdate/ssu {index} {name1} {cost1} {name2} {cost2}...\n \
+	                                                修改: ssupdate/ssu {index} {item} {name1} {cost1} {name2} {cost2}...\n \
                                                     刪除: ssdelete/ssd {index}\n \
                                                     統計: sstotal/sst\n \
                                                     清空: ssclearclearclear'))
 
-                elif len(textArray) >= 3 and textArray[0] in ("sscreate", "ssc"): # 新增
-                    nameString, costString = makeList(textArray, 1)
-                    d = Main_Database.objects.create(name_field=nameString, cost_field=costString)
+                elif len(textArray) >= 4 and textArray[0] in ("sscreate", "ssc"): # 新增
+                    sig = True
+                    for i in range(3, len(textArray)):
+                        if i % 2 == 1:
+                            try: int(textArray[i])
+                            except:
+                                message.append(TextSendMessage(text='指令錯誤，輸入 ss 查詢指令'))
+                                sig = False
+                                break
                     
-                    dataArray = Order_Data.objects.all()
-                    Order_Data.objects.create(order_id=len(dataArray)+1, Main_Database=d)
-
-                    message.append(TextSendMessage(text='分帳資料新增完成'))
+                    if sig:
+                        nameString, costString = makeList(textArray, 2)
+                        d = Main_Database.objects.create(item_field=textArray[1], name_field=nameString, cost_field=costString)
+                        dataArray = Order_Data.objects.all()
+                        Order_Data.objects.create(order_id=len(dataArray)+1, Main_Database=d)
+                        message.append(TextSendMessage(text='分帳資料新增完成'))
                     
                 elif len(textArray) >= 1 and textArray[0] in ("sslist", "ssl"): # 列出
                     dataArray = Order_Data.objects.all()
-                    
                     textMessage = ""
                     for item in dataArray:
                         if textMessage == "":
@@ -66,35 +73,51 @@ def callback(request):
                             textMessage += '\n' + splitList(item)
                     message.append(TextSendMessage(text=textMessage))
 
-                elif len(textArray) >= 4 and textArray[0] in ("ssupdate", "ssu"): # 修改
-                    nameString, costString = makeList(textArray, 2)
-                    data = Order_Data.objects.get(order_id=int(textArray[1]))
-                    Main_Database.objects.filter(data_id=data.Main_Database.data_id).update(name_field=nameString, cost_field=costString)
-                    message.append(TextSendMessage(text='分帳資料修改完成'))
+                elif len(textArray) >= 5 and textArray[0] in ("ssupdate", "ssu"): # 修改
+                    sig = True
+                    for i in range(4, len(textArray)):
+                        if i % 2 == 0:
+                            try: int(textArray[i])
+                            except:
+                                message.append(TextSendMessage(text='指令錯誤，輸入 ss 查詢指令'))
+                                sig = False
+                                break
+                    
+                    if sig:
+                        nameString, costString = makeList(textArray, 3)
+                        data = Order_Data.objects.get(order_id=int(textArray[1]))
+                        Main_Database.objects.filter(data_id=data.Main_Database.data_id).update(item_field=textArray[2], name_field=nameString, cost_field=costString)
+                        message.append(TextSendMessage(text='分帳資料修改完成'))
 
                 elif len(textArray) >= 2 and textArray[0] in ("ssdelete", "ssd"): # 刪除
                     data = Order_Data.objects.get(order_id=int(textArray[1]))
                     Main_Database.objects.filter(data_id=data.Main_Database.data_id).delete()
-                    
                     dataArray = Order_Data.objects.all()
+                    
                     for item in dataArray:
                         if item.order_id > int(textArray[1]):
                             item.order_id -= 1
                             item.save()
-
                     message.append(TextSendMessage(text='第' + textArray[1] + '筆資料已刪除'))
 
-                # elif textArray[0] in ("sstotal", " sst"):
-                #     dataArray = Main_Database.objects.all()
-                    
-                #     message.append(TextSendMessage(text=''))
+                elif textArray[0] in ("sstotal", "sst"): # 統計
+                    dataArray = Order_Data.objects.all()
+                    if len(textArray) >= 3:
+                        a, b = int(textArray[1]), int(textArray[2])
+                        resultString = totalList(dataArray, a, b)
+                    elif len(textArray) >= 2:
+                        a = int(textArray[1])
+                        resultString = totalList(dataArray, a)
+                    else:
+                        resultString = totalList(dataArray)
+                    message.append(TextSendMessage(text='統計結果: \n\n' + resultString))
 
                 elif len(textArray) >= 1 and textArray[0] in ("ssclearclearclear"): # 清空
                     Main_Database.objects.all().delete()
                     message.append(TextSendMessage(text='所有分帳資料已刪除'))
                     
                 else:
-                    message.append(TextSendMessage(text='指令錯誤，輸入 ss 查詢所有指令'))
+                    message.append(TextSendMessage(text='指令錯誤，輸入 ss 查詢指令'))
 
                 line_bot_api.reply_message(event.reply_token, message)
 
