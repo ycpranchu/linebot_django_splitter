@@ -9,7 +9,6 @@ from splitter.models import *
 from linebot import LineBotApi, WebhookParser
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextSendMessage
-import datetime
 
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
@@ -31,8 +30,11 @@ def callback(request):
         for event in events:
             if isinstance(event, MessageEvent):
                 text = event.message.text
-                uid = event.source.user_id
                 textArray = text.split(' ')
+                try:
+                    gid = event.source.group_id
+                except:
+                    gid = event.source.user_id
                 
                 if len(textArray) <= 0 or textArray[0][0:2] != "ss":
                     return HttpResponse("do nothing")
@@ -59,12 +61,12 @@ def callback(request):
                     if sig:
                         nameString, costString = makeList(textArray, 2)
                         d = Main_Database.objects.create(item_field=textArray[1], name_field=nameString, cost_field=costString)
-                        dataArray = Order_Data.objects.all()
-                        Order_Data.objects.create(order_id=len(dataArray)+1, Main_Database=d)
+                        dataArray = Order_Data.objects.filter(group_id=gid)
+                        Order_Data.objects.create(group_id=gid, order_id=dataArray.count()+1, Main_Database=d)
                         message.append(TextSendMessage(text='分帳資料新增完成'))
                     
                 elif len(textArray) >= 1 and textArray[0] in ("sslist", "ssl"): # 列出
-                    dataArray = Order_Data.objects.all()
+                    dataArray = Order_Data.objects.filter(group_id=gid)
                     textMessage = ""
                     for item in dataArray:
                         if textMessage == "":
@@ -85,14 +87,14 @@ def callback(request):
                     
                     if sig:
                         nameString, costString = makeList(textArray, 3)
-                        data = Order_Data.objects.get(order_id=int(textArray[1]))
+                        data = Order_Data.objects.get(group_id=gid, order_id=int(textArray[1]))
                         Main_Database.objects.filter(data_id=data.Main_Database.data_id).update(item_field=textArray[2], name_field=nameString, cost_field=costString)
                         message.append(TextSendMessage(text='分帳資料修改完成'))
 
                 elif len(textArray) >= 2 and textArray[0] in ("ssdelete", "ssd"): # 刪除
-                    data = Order_Data.objects.get(order_id=int(textArray[1]))
+                    data = Order_Data.objects.get(group_id=gid, order_id=int(textArray[1]))
                     Main_Database.objects.filter(data_id=data.Main_Database.data_id).delete()
-                    dataArray = Order_Data.objects.all()
+                    dataArray = Order_Data.objects.filter(group_id=gid)
                     
                     for item in dataArray:
                         if item.order_id > int(textArray[1]):
@@ -101,7 +103,7 @@ def callback(request):
                     message.append(TextSendMessage(text='第' + textArray[1] + '筆資料已刪除'))
 
                 elif textArray[0] in ("sstotal", "sst"): # 統計
-                    dataArray = Order_Data.objects.all()
+                    dataArray = Order_Data.objects.filter(group_id=gid)
                     if len(textArray) >= 3:
                         a, b = int(textArray[1]), int(textArray[2])
                         resultString = totalList(dataArray, a, b)
@@ -113,7 +115,9 @@ def callback(request):
                     message.append(TextSendMessage(text='統計結果: \n\n' + resultString))
 
                 elif len(textArray) >= 1 and textArray[0] in ("ssclearclearclear"): # 清空
-                    Main_Database.objects.all().delete()
+                    dataArray = Order_Data.objects.filter(group_id=gid)
+                    for data in dataArray:
+                        Main_Database.objects.filter(data_id=data.Main_Database.data_id).delete()
                     message.append(TextSendMessage(text='所有分帳資料已刪除'))
                     
                 else:
