@@ -10,6 +10,7 @@ class Main_Database(models.Model):
 
 
 class Order_Data(models.Model):
+    user_id = models.CharField(max_length=200, blank=True, null=False)
     order_id = models.IntegerField(blank=True, null=False)
     Main_Database = models.ForeignKey(Main_Database, on_delete=models.CASCADE)
 
