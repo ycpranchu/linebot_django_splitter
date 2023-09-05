@@ -39,12 +39,15 @@ def callback(request):
                 if len(textArray) <= 0 or textArray[0][0:2] != "ss":
                     return HttpResponse("do nothing")
                 
-                n_index = textArray.index("")
-                if n_index != -1:
-                    textArray = textArray[0:n_index]
+                try:
+                    n_index = textArray.index("")
+                    if n_index != -1:
+                        textArray = textArray[0:n_index]
+                except:
+                    pass
 
                 message = []
-                if len(textArray) >= 1 and textArray[0] in ("ss"): # 所有指令
+                if len(textArray) == 1 and textArray[0] in ("ss"): # 所有指令
                     message.append(TextSendMessage(text='新增: sscreate/ssc {item} {name1} {cost1} {name2} {cost2}...\n \
                                                     列出: sslist/ssl\n \
 	                                                修改: ssupdate/ssu {index} {item} {name1} {cost1} {name2} {cost2}...\n \
@@ -52,7 +55,7 @@ def callback(request):
                                                     統計: sstotal/sst\n \
                                                     清空: ssclearclearclear'))
 
-                elif len(textArray) >= 4 and textArray[0] in ("sscreate"): # 新增
+                elif len(textArray) == 4 and textArray[0] in ("sscreate"): # 新增
                     sig = True
                     for i in range(3, len(textArray)):
                         if i % 2 == 1:
@@ -69,7 +72,7 @@ def callback(request):
                         Order_Data.objects.create(group_id=gid, order_id=dataArray.count()+1, Main_Database=d)
                         message.append(TextSendMessage(text='分帳資料新增完成'))
                     
-                elif len(textArray) >= 1 and textArray[0] in ("sslist", "ssl"): # 列出
+                elif len(textArray) == 1 and textArray[0] in ("sslist"): # 列出
                     dataArray = Order_Data.objects.filter(group_id=gid)
                     textMessage = ""
                     for item in dataArray:
@@ -79,7 +82,7 @@ def callback(request):
                             textMessage += '\n' + splitList(item)
                     message.append(TextSendMessage(text=textMessage))
 
-                elif len(textArray) >= 5 and textArray[0] in ("ssupdate", "ssu"): # 修改
+                elif len(textArray) == 5 and textArray[0] in ("ssupdate"): # 修改
                     sig = True
                     for i in range(4, len(textArray)):
                         if i % 2 == 0:
@@ -95,7 +98,7 @@ def callback(request):
                         Main_Database.objects.filter(data_id=data.Main_Database.data_id).update(item_field=textArray[2], name_field=nameString, cost_field=costString)
                         message.append(TextSendMessage(text='分帳資料修改完成'))
 
-                elif len(textArray) >= 2 and textArray[0] in ("ssdelete", "ssd"): # 刪除
+                elif len(textArray) == 2 and textArray[0] in ("ssdelete"): # 刪除
                     data = Order_Data.objects.get(group_id=gid, order_id=int(textArray[1]))
                     Main_Database.objects.filter(data_id=data.Main_Database.data_id).delete()
                     dataArray = Order_Data.objects.filter(group_id=gid)
@@ -106,7 +109,7 @@ def callback(request):
                             item.save()
                     message.append(TextSendMessage(text='第' + textArray[1] + '筆資料已刪除'))
 
-                elif textArray[0] in ("sstotal", "sst"): # 統計
+                elif len(textArray) == 1 and textArray[0] in ("sstotal", "sst"): # 統計
                     dataArray = Order_Data.objects.filter(group_id=gid)
                     if len(textArray) >= 3:
                         a, b = int(textArray[1]), int(textArray[2])
@@ -118,7 +121,7 @@ def callback(request):
                         resultString = totalList(dataArray)
                     message.append(TextSendMessage(text='統計結果: \n\n' + resultString))
 
-                elif len(textArray) >= 1 and textArray[0] == "ssclearclearclear": # 清空
+                elif len(textArray) == 1 and textArray[0] == "ssclearclearclear": # 清空
                     dataArray = Order_Data.objects.filter(group_id=gid)
                     for data in dataArray:
                         Main_Database.objects.filter(data_id=data.Main_Database.data_id).delete()
