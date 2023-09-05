@@ -38,6 +38,10 @@ def callback(request):
                 
                 if len(textArray) <= 0 or textArray[0][0:2] != "ss":
                     return HttpResponse("do nothing")
+                
+                n_index = textArray.index("")
+                if n_index != -1:
+                    textArray = textArray[0:n_index]
 
                 message = []
                 if len(textArray) >= 1 and textArray[0] in ("ss"): # 所有指令
@@ -48,7 +52,7 @@ def callback(request):
                                                     統計: sstotal/sst\n \
                                                     清空: ssclearclearclear'))
 
-                elif len(textArray) >= 4 and textArray[0] in ("sscreate", "ssc"): # 新增
+                elif len(textArray) >= 4 and textArray[0] in ("sscreate"): # 新增
                     sig = True
                     for i in range(3, len(textArray)):
                         if i % 2 == 1:
@@ -114,7 +118,7 @@ def callback(request):
                         resultString = totalList(dataArray)
                     message.append(TextSendMessage(text='統計結果: \n\n' + resultString))
 
-                elif len(textArray) >= 1 and textArray[0] in ("ssclearclearclear"): # 清空
+                elif len(textArray) >= 1 and textArray[0] == "ssclearclearclear": # 清空
                     dataArray = Order_Data.objects.filter(group_id=gid)
                     for data in dataArray:
                         Main_Database.objects.filter(data_id=data.Main_Database.data_id).delete()
